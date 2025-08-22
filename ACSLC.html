@@ -1,0 +1,1078 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chakma Script Learning App</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            overflow: hidden; /* Hide scrollbars initially */
+        }
+        .bengali-text {
+            font-family: 'Hind Siliguri', sans-serif;
+        }
+        .chakma-font, .chakma-vowel, .chakma-text {
+            font-family: 'RibengUni', sans-serif;
+        }
+        .chakma-font, .chakma-vowel {
+            font-size: 3rem; 
+        }
+        .btn-active {
+            background-color: #c7d2fe; /* indigo-200 */
+            color: #1e293b; /* slate-800 */
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            border: 1px solid #818cf8; /* indigo-400 */
+        }
+        .alphabet-card {
+            transition: all 0.2s ease-in-out;
+            border: 1px solid #e5e7eb;
+            background-color: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            cursor: pointer;
+        }
+        .alphabet-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+            border-color: #6366f1; /* indigo-500 */
+        }
+        .nav-btn-internal {
+            background-color: #4f46e5;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 9999px;
+            transition: background-color 0.3s;
+        }
+        .nav-btn-internal:hover {
+            background-color: #3730a3;
+        }
+        .nav-btn-internal:disabled {
+            background-color: #a5b4fc;
+            cursor: not-allowed;
+        }
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.6);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s, visibility 0.3s;
+        }
+        .modal-overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+        .modal-content {
+            background-color: white;
+            padding: 1.5rem;
+            border-radius: 1rem;
+            width: 90%;
+            max-width: 600px;
+            transform: scale(0.9);
+            transition: transform 0.3s;
+        }
+        @media (min-width: 768px) {
+            .modal-content {
+                padding: 2rem;
+            }
+        }
+        .modal-overlay.show .modal-content {
+            transform: scale(1);
+        }
+        #drawing-canvas {
+            border: 2px solid #e5e7eb;
+            border-radius: 0.5rem;
+            touch-action: none;
+        }
+        .class-badge {
+            background-color: #e0e7ff; /* indigo-100 */
+            color: #4338ca; /* indigo-700 */
+            font-size: 0.875rem; /* text-sm */
+            font-weight: 600; /* font-semibold */
+            padding: 0.25rem 0.75rem; /* px-3 py-1 */
+            border-radius: 9999px; /* rounded-full */
+            white-space: nowrap;
+        }
+
+        /* Welcome Screen Styles */
+        #welcome-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 2000;
+            transition: opacity 0.5s ease-out;
+        }
+        #welcome-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+        .welcome-content {
+            position: relative;
+            z-index: 1;
+            text-shadow: 0px 2px 4px rgba(0,0,0,0.2);
+        }
+        #main-app {
+            opacity: 0;
+            transition: opacity 0.5s ease-in;
+        }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-800">
+
+    <!-- Welcome Screen -->
+    <div id="welcome-screen" class="flex flex-col items-center justify-center bg-indigo-50 p-4">
+        <canvas id="welcome-canvas"></canvas>
+        <div class="welcome-content text-center">
+            <h2 class="text-3xl md:text-5xl font-bold text-indigo-800 chakma-text">𑄃𑄪𑄎𑄧𑄚𑄨 𑄌𑄋𑄴𑄟𑄳𑄦 𑄣𑄬𑄊 𑄥𑄨𑄇𑄴𑄈𑄬 𑄇𑄬𑅅𑄢𑄴𑄥𑄴</h2>
+            <h3 id="welcome-subtitle" class="text-indigo-600 text-md md:text-lg mt-2">Welcome to Chakma Script Learning Course</h3>
+            <button id="start-btn" onclick="startApp()" class="mt-8 px-8 py-3 bg-indigo-600 text-white font-bold rounded-full shadow-lg hover:bg-indigo-700 transform hover:scale-105 transition-all duration-300">
+                Let's Get Started
+            </button>
+        </div>
+    </div>
+
+    <!-- Main Application -->
+    <div id="main-app" style="display: none;">
+        <div class="max-w-4xl mx-auto p-4 sm:p-6 lg:p-8 relative">
+            <!-- Language Toggle -->
+            <div class="absolute top-4 right-4">
+                <button id="lang-toggle-btn" class="px-4 py-2 bg-white rounded-full shadow-md text-sm font-semibold"></button>
+            </div>
+
+            <!-- Header -->
+            <header class="text-center mb-8">
+                <h1 class="text-3xl md:text-4xl font-bold text-indigo-700 chakma-text">𑄃𑄪𑄎𑄧𑄚𑄨 𑄌𑄋𑄴𑄟𑄳𑄦 𑄣𑄬𑄊 𑄥𑄨𑄇𑄴𑄈𑄬 𑄇𑄬𑅅𑄢𑄴𑄥𑄴</h1>
+                <h2 id="header-subtitle" class="text-slate-600 text-sm md:text-base mt-2 tracking-wider">ADVANCE CHAKMA SCRIPT LEARNING COURSE</h2>
+            </header>
+
+            <!-- Module Navigation -->
+            <nav id="module-nav" class="flex flex-wrap justify-center gap-2 md:gap-4 mb-8">
+                <!-- Module buttons will be injected here -->
+            </nav>
+
+            <!-- Main Content Area -->
+            <main id="content-area" class="bg-white p-4 md:p-8 rounded-2xl shadow-lg min-h-[500px] transition-opacity duration-500">
+                <!-- Module content will be injected here -->
+            </main>
+        </div>
+    </div>
+
+    <!-- Drawing Modal -->
+    <div id="drawing-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="flex justify-between items-center mb-4">
+                <h3 id="draw-modal-title" class="text-xl md:text-2xl font-bold text-indigo-600"></h3>
+                <button onclick="closeModal()" class="text-2xl font-bold text-slate-500 hover:text-slate-800">&times;</button>
+            </div>
+            <div class="grid md:grid-cols-2 gap-6 items-start">
+                <div class="flex flex-col items-center">
+                    <h4 id="draw-guide-title" class="font-semibold mb-2"></h4>
+                    <img id="modal-guide-image" src="https://placehold.co/300x300/e0e7ff/4f46e5?text=Guide" alt="Writing guide" class="rounded-lg w-full max-w-[250px] h-auto aspect-square border">
+                </div>
+                <div class="flex flex-col items-center">
+                    <h4 id="draw-area-title" class="font-semibold mb-2"></h4>
+                    <canvas id="drawing-canvas" width="250" height="250" class="max-w-full h-auto"></canvas>
+                    <div class="flex justify-between mt-2 w-full max-w-[250px]">
+                        <button onclick="undoLast()" class="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition text-xl">&#x21BA;</button>
+                        <button id="clear-canvas-btn" onclick="clearCanvas()" class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition text-sm"></button>
+                        <button onclick="redoLast()" class="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition text-xl">&#x21BB;</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- IPA Details Modal -->
+    <div id="ipa-modal" class="modal-overlay">
+        <div class="modal-content max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-4">
+                <h3 id="ipa-modal-title" class="text-2xl font-bold text-indigo-600"></h3>
+                <button onclick="closeIpaModal()" class="text-2xl font-bold text-slate-500 hover:text-slate-800">&times;</button>
+            </div>
+            <div id="ipa-modal-content" class="text-justify space-y-3 leading-relaxed">
+                <!-- IPA details will be injected here -->
+            </div>
+        </div>
+    </div>
+    
+    <!-- Note Modal -->
+    <div id="note-modal" class="modal-overlay">
+        <div class="modal-content max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-4">
+                <h3 id="note-modal-title" class="text-2xl font-bold text-indigo-600"></h3>
+                <button onclick="closeNoteModal()" class="text-2xl font-bold text-slate-500 hover:text-slate-800">&times;</button>
+            </div>
+            <div id="note-modal-content" class="text-justify space-y-3 leading-relaxed">
+                 <!-- Note content will be injected here -->
+            </div>
+        </div>
+    </div>
+
+
+    <script>
+        // --- LANGUAGE DATA ---
+        const translations = {
+            en: {
+                welcomeSubtitle: "Welcome to Chakma Script Learning Course",
+                startBtn: "Let's Get Started",
+                headerSubtitle: "ADVANCE CHAKMA SCRIPT LEARNING COURSE",
+                module: "Module",
+                class: "Class",
+                drawModalTitle: "Practice Letter Writing",
+                drawGuideTitle: "Follow this guide",
+                drawAreaTitle: "Draw here",
+                clearCanvasBtn: "Clear",
+                ipaModalTitle: "Pronunciation Details",
+                noteModalTitle: "Notes on Consonants",
+                prevPage: "Prev Page",
+                nextPage: "Next Page",
+                prevChars: "Prev Chars",
+                nextChars: "Next Chars",
+                moduleNavTitle: "Module 1: Ojhapath",
+                practice: "Practice",
+                note: "Note",
+                assignment: "Assignment",
+                vowelPracticeTitle: "Chakma Vowels (Practice)",
+                consonantPracticeTitle: "Chakma Consonants (Practice)",
+                toggleLang: "বাংলা",
+                noteContent: `
+                    <p>Chakma consonants are pronounced with an inherent 'a' sound. In the Chakma language, there are 33 consonants for 34 consonant sounds.</p>
+                    <p class="chakma-text text-2xl leading-relaxed break-words">𑄇, 𑄈, 𑄉, 𑄊, 𑄋. 𑄌, 𑄍, 𑄎, 𑄏, 𑄐, 𑄑, 𑄒, 𑄓, 𑄔, 𑄕, 𑄖, 𑄗, 𑄘, 𑄙, 𑄚, 𑄛, 𑄜, 𑄝, 𑄞, 𑄟, 𑄡, 𑄢, 𑄣, 𑄤, 𑄥, 𑄦, 𑄠, 𑅄</p>
+                    <p>It is worth noting that not all of these 33 consonants are used in modern Chakma. The letters <span class="chakma-text">𑄑, 𑄒, 𑄓, 𑄔, 𑄕</span> are no longer commonly pronounced by Chakma speakers. However, they still exist in the script, perhaps because these sounds were used in the past but have been lost over time due to language change.</p>
+                `
+            },
+            bn: {
+                welcomeSubtitle: "চাকমা লিপি শিক্ষা কোর্সে স্বাগতম",
+                startBtn: "শুরু করা যাক",
+                headerSubtitle: "অ্যাডভান্স চাকমা লিপি শিক্ষা কোর্স",
+                module: "মডিউল",
+                class: "ক্লাস",
+                drawModalTitle: "বর্ণ লেখার অনুশীলন",
+                drawGuideTitle: "এভাবে হাত ঘোরান",
+                drawAreaTitle: "এখানে আঁকুন",
+                clearCanvasBtn: "মুছে ফেলুন",
+                ipaModalTitle: "উচ্চারণ বিবরণ",
+                noteModalTitle: "ব্যঞ্জনবর্ণ সম্পর্কিত নোট",
+                prevPage: "পূর্ববর্তী পৃষ্ঠা",
+                nextPage: "পরবর্তী পৃষ্ঠা",
+                prevChars: "পূর্ববর্তী বর্ণ",
+                nextChars: "পরবর্তী বর্ণ",
+                moduleNavTitle: "মডিউল ১: অঝাপাত",
+                practice: "অনুশীলন",
+                note: "নোট",
+                assignment: "অ্যাসাইনমেন্ট",
+                vowelPracticeTitle: "চাকমা স্বরবর্ণ (অনুশীলন)",
+                consonantPracticeTitle: "চাকমা ব্যঞ্জনবর্ণ (অনুশীলন)",
+                toggleLang: "English",
+                noteContent: `
+                    <p>চাকমা ব্যঞ্জনবর্ণগুলো পড়ার সময় সহজাত ধ্বনি- ‘আ’ সহকারে উচ্চারিত হয়। চাকমা ভাষায় ৩৪টি ব্যঞ্জনধ্বনির বিপরীতে ব্যঞ্জনবর্ণ আছে ৩৩টি।</p>
+                    <p class="chakma-text text-2xl leading-relaxed break-words">𑄇, 𑄈, 𑄉, 𑄊, 𑄋. 𑄌, 𑄍, 𑄎, 𑄏, 𑄐, 𑄑, 𑄒, 𑄓, 𑄔, 𑄕, 𑄖, 𑄗, 𑄘, 𑄙, 𑄚, 𑄛, 𑄜, 𑄝, 𑄞, 𑄟, 𑄡, 𑄢, 𑄣, 𑄤, 𑄥, 𑄦, 𑄠, 𑅄</p>
+                    <p>উল্লেখ্য যে, এই ৩৩টি ব্যঞ্জনবর্ণের মধ্যে সবকটির ব্যবহার আধুনিক চাকমা ভাষায় ব্যবহার হয় না। অর্থাৎ <span class="chakma-text">𑄑, 𑄒, 𑄓, 𑄔, 𑄕</span> এই বর্ণগুলো উচ্চারণ করতে চাকমারা এখন আর অভ্যস্ত নয়। তবুও এই বর্ণগুলো এখনও পর্যন্ত অঝাপাতে রয়েছে। হয়ত অতীতে এই ধ্বনিগুলোর ব্যবহার চাকমা ভাষায় ছিল, কিন্তু ভাষা পরিবর্তনের সাথে সাথে লোপ পেয়েছে।</p>
+                `
+            }
+        };
+
+        let currentLanguage = 'en';
+
+        // --- DATA ---
+        const vowels = [
+            { chakma: '𑄃', name: { en: 'A', bn: 'অ (A)' }, guideImage: 'a direction.png' },
+            { chakma: '𑄄', name: { en: 'I', bn: 'ই (I)' }, guideImage: 'i direction.png' },
+            { chakma: '𑄅', name: { en: 'U', bn: 'উ (U)' }, guideImage: 'u direction.png' },
+            { chakma: '𑄆', name: { en: 'E', bn: 'এ (E)' }, guideImage: 'e direction.png' },
+        ];
+        const alphabets = [
+             { 
+                chakma: '𑄇', name: 'Chuccyengye', transliteration: { en: 'Ka', bn: 'কা (Ka)' }, ipa: 'IPA: /k/ [x]', guideImage: 'ka direction.png',
+                ipa_details: `
+                    <p><b>𑄇 : চুচ্যেঙ্যে-কা</b> এর দুটি সহধ্বনি (allophone) আছে। বাংলাদেশ ও ভারতে অবস্থানরত অধিকাংশ চাকমা উচ্চারণে 𑄇-এর দ্বৈতধ্বনি শোনা যায়। এছাড়াও তঞ্চঙ্গ্যাদের একটি গছা (কার্বোয়া গছা) 𑄇-এর দ্বৈতধ্বনি উচ্চারণ করে কথা বলে। এই দ্বৈতধ্বনিগুলো হচ্ছে মূলধ্বনির সহধ্বনি।</p>
+                    <p>উল্লেখিত সম্প্রদায়ের আত্মীকৃত বা নিজস্ব শব্দে স্বাধীন অবস্থাতে (স্বরযুক্ত তবে হস্‌যুক্ত নয়) এটি বাংলা 'ক' ও 'হ' এর মাঝামাঝি উচ্চারিত হয়। এটি অঘোষ জিহবামূলীয় ঘর্ষণজাত অল্পপ্রাণ (voeless velar fricative unaspirated) ধ্বনি, যার বর্ণীকরণ হবে <b>[x]</b>। এই ধ্বনি চাকমা শব্দের আদি ও মধ্যে পাওয়া যায়।</p>
+                    <p><b>আদিতে:</b> <span class="chakma-text">𑄇𑄖𑄴𑄗𑄬𑅅𑄣𑄴</span> [xattʰol], <span class="chakma-text">𑄇𑄧𑄟𑄧𑄣</span> [xɔmɔla], <span class="chakma-text">𑄇𑄪𑄌𑄴𑄍𑄬𑄬𑄣𑄴</span> [xuççʰel] ইত্যাদি।</p>
+                    <p><b>মধ্যে:</b> <span class="chakma-text">𑄃𑄧𑄇𑄧𑄙</span> [ɔxɔdʰa], <span class="chakma-text">𑄃𑄧𑄟𑄧𑄇𑄧𑄘𑄧</span> [ɔmɔxɔdɔ] ইত্যাদি।</p>
+                    <p>আবার, শব্দের আদি, মধ্যে ও অন্ত্যে হস্ ও ব্যঞ্জনযুক্তাবস্থায় থাকলে বাংলা 'ক্' এর ন্যায় উচ্চারিত হয়। IPA অনুযায়ী এই ধ্বনির অবস্থান- অঘোষ জিহবামূলীয় স্পর্শ অল্পপ্রাণ (voiceless velar plosive unaspirated) ধ্বনি, যার বর্ণীকরণ হবে <b>/k/</b>।</p>
+                    <p><b>আদিতে:</b> <span class="chakma-text">𑄇𑄳𑄣𑄬𑄇𑄴 𑄇𑄳𑄣𑄬𑄇𑄴</span> [klɛk klɛk], <span class="chakma-text">𑄇𑄳𑄢𑄧𑄇𑄴 𑄇𑄳𑄢𑄧𑄇𑄴</span> [krɔk krɔk] ইত্যাদি।</p>
+                    <p><b>মধ্যে:</b> <span class="chakma-text">𑄥𑄇𑄴𑄬𑅅𑄚𑄴</span> [sakkon], <span class="chakma-text">𑄃𑄇𑄳𑄠𑄬𑄁</span> [akkeŋ], <span class="chakma-text">𑄄𑄇𑄴𑄪𑄣𑄴</span> [ikkul] ইত্যাদি।</p>
+                    <p><b>অন্ত্যে:</b> <span class="chakma-text">𑄟𑄮𑄇𑄴</span> [mok], <span class="chakma-text">𑄙𑄧𑄇𑄴</span> [dʰɔk], <span class="chakma-text">𑄉𑄦𑄴𑄇𑄴</span> [gahk] ইত্যাদি।</p>
+                    <p><b>স্মর্তব্য:</b> এই ধ্বনিমূল বিশেষ ভাষা ব্যতীত অন্য (বাংলা, ইংরেজি, হিন্দি ইত্যাদি) ভাষায় শব্দের সকল স্থানে স্বাধীন ও যুক্ত অবস্থায় /k/ উচ্চারিত হবে।</p>
+                `
+            },
+            { 
+                chakma: '𑄈', name: 'Gujongye', transliteration: { en: 'Kha', bn: 'খা (Kha)' }, ipa: 'IPA: /kʰ/ [xʰ]', guideImage: 'kha direction.png',
+                ipa_details: `
+                    <p><b>𑄈 : গুজঙ্যে-খা</b> এরও দুটি সহধ্বনি (allophone) আছে। বাংলাদেশ ও ভারতে অবস্থানরত অধিকাংশ চাকমা উচ্চারণে 𑄈-এর দ্বৈতধ্বনি শোনা যায়। এছাড়াও চট্টগ্রামী ভাষাভাষী ও তঞ্চঙ্গ্যাদের একটি গছা (কার্বোয়া গছা) 𑄈-এর দ্বৈতধ্বনি উচ্চারণ করে কথা বলে। এই দ্বৈতধ্বনিগুলো হচ্ছে মূলধ্বনির সহধ্বনি।</p>
+                    <p>উল্লেখিত সম্প্রদায়ের আত্মীকৃত বা নিজস্ব শব্দে স্বাধীন অবস্থাতে (স্বরযুক্ত তবে হসযুক্ত নয়) এটি বাংলা 'খ' ও 'হ' এর মাঝামাঝি উচ্চারিত হয়। এটি অঘোষ জিহবামূলীয় ঘর্ষণজাত মহাপ্রাণ (voicelless velar fricative aspirated) ধ্বনি, যার বর্ণীকরণ হবে <b>[xʰ]</b>। এই ধ্বনি শব্দের আদিতে পাওয়া যায়।</p>
+                    <p><b>আদিতে:</b> <span class="chakma-text">𑄈𑄢</span> [xʰara], <span class="chakma-text">𑄈𑄧𑄝𑄧𑄁</span> [xʰɔbɔŋ], <span class="chakma-text">𑄈𑄘𑄨</span> [xʰadi] ইত্যাদি।</p>
+                    <p>আবার, শব্দের আদি ও মধ্যে হস্ ও ব্যঞ্জনযুক্তাবস্থায় থাকলে বাংলা 'খ্' এর ন্যায় উচ্চারিত হয়। এটি অঘোষ জিহবামূলীয় স্পর্শ মহাপ্রাণ (voiceless velar plosive aspirated) ধ্বনি, যার বর্ণীকরণ হবে <b>/kʰ/</b>।</p>
+                    <p><b>আদিতে:</b> <span class="chakma-text">𑄈𑄳𑄢𑄧𑄖𑄴 𑄈𑄳𑄢𑄧𑄖𑄴</span> [kʰrɔt kʰrɔt], <span class="chakma-text">𑄈𑄬𑄇𑄴 𑄈𑄬𑄇𑄴</span> [kʰɛk kʰɛk] ইত্যাদি।</p>
+                    <p><b>মধ্যে:</b> <span class="chakma-text">𑄢𑄧𑄇𑄴𑄈</span> [rɔkkʰa], <span class="chakma-text">𑄌𑄬𑅅𑄇𑄴𑄈𑄪𑄚𑄴</span> [cokkʰun], <span class="chakma-text">𑄛𑄬𑄬𑄇𑄴𑄈𑄱</span> [pekkʰʷa], <span class="chakma-text">𑄘𑄬𑄈𑄳𑄠𑄧𑄁</span> [dekkʰʷoŋ] ইত্যাদি।</p>
+                    <p><b>স্মর্তব্য:</b> এই ধ্বনিমূল বিশেষ ভাষা ব্যতীত অন্য (বাংলা, ইংরেজি, হিন্দি ইত্যাদি) ভাষায় শব্দের সকল স্থানে স্বাধীন ও যুক্ত অবস্থায় /kʰ/ উচ্চারিত হবে।</p>
+                `
+            },
+            { 
+                chakma: '𑄉', name: 'Chandye', transliteration: { en: 'Ga', bn: 'গা (Ga)' }, ipa: 'IPA: /g/', guideImage: 'ga direction.png',
+                ipa_details: `
+                    <p><b>𑄉 : চান্দ্যে-গা</b> হচ্ছে ঘোষ জিহবামূলীয় স্পর্শ অল্পপ্রাণ (voiced velar plosive unaspirated) ধ্বনি, যার বর্ণীকরণ হবে /ɡ/। চাকমা ভাষায় এই ধ্বনি শব্দের আদি ও মধ্যে পাওয়া যায়। উল্লেখ্য যে, দ্রুত উচ্চারণের সময় কিছু কিছু চাকমা শব্দে এই ব্যঞ্জন ধ্বনি লুপ্ত হয়ে বর্ণস্থিত স্বরধ্বনিটি উচ্চারিত হয়।</p>
+                    <p><b>আদিতে:</b> <span class="chakma-text">𑄉𑄖𑄴</span> [ɡat] , <span class="chakma-text">𑄉𑄨𑄢𑄳𑄦𑄬𑅅𑄌𑄴</span> [ɡirʰoc] ইত্যাদি।</p>
+                    <p><b>মধ্যে:</b> <span class="chakma-text">𑄃𑄉</span> [aɡa], <span class="chakma-text">𑄜𑄉𑄪𑄚𑄴</span> [pʰaɡun > pʰaun], <span class="chakma-text">𑄥𑄉𑄬𑅅𑄚𑄴</span> [saɡon > saon] ইত্যাদি।</p>
+                `
+            },
+            { 
+                chakma: '𑄊', name: 'Tindhellye', transliteration: { en: 'Gha', bn: 'ঘা (Gha)' }, ipa: 'IPA: /gʰ/', guideImage: 'gha direction.png',
+                ipa_details: `
+                    <p><b>𑄊 : তিনধেল্যে-ঘা</b> হচ্ছে ঘোষ জিহবামূলীয় স্পর্শ মহাপ্রাণ (voiced velar plosive aspirated) ধ্বনি, যার বর্ণীকরণ হবে /ɡʰ/। চাকমা ভাষায় এই ধ্বনি শব্দের আদি ও মধ্যে পাওয়া যায়।</p>
+                    <p><b>আদিতে:</b> <span class="chakma-text">𑄊𑄖𑄴</span> [ɡʰat] , <span class="chakma-text">𑄊𑄧𑄢𑄴</span> [ɡʰɔr] ইত্যাদি।</p>
+                    <p><b>মধ্যে:</b> <span class="chakma-text">𑄣𑄊</span> [।aɡʰa], <span class="chakma-text">𑄃𑄊𑄧𑄖𑄴𑄧𑄣𑄨</span> [aɡʰɔttɔ।i], <span class="chakma-text">𑄝𑄊𑄳𑄠𑄬</span> [baɡɡʰe] ইত্যাদি।</p>
+                `
+            },
+            { 
+                chakma: '𑄋', name: 'Chilemo', transliteration: { en: 'Nga', bn: 'ঙা (Nga)' }, ipa: 'IPA: /ŋ/', guideImage: 'nga direction.png',
+                ipa_details: `
+                    <p><b>𑄋, 𑄁 : চিলেম-ঙা</b> হচ্ছে অঘোষ নাসিক্য জিহবামূলীয় অল্পপ্রাণ (voiceless nasal velar unaspirated) ধ্বনি, আর একফুদো তারই প্রতিভূ; বলা যায় চিলেম-ঙা’র সংক্ষিপ্তরূপ। এদের বর্ণীকরণ হবে /ŋ/। চাকমা ভাষায় এই ধ্বনি শব্দের মধ্যে ও অন্ত্যে পাওয়া যায়।</p>
+                    <p><b>মধ্যে:</b> <span class="chakma-text">𑄇𑄋𑄢𑄳𑄦</span> [xaŋarʰa], <span class="chakma-text">𑄇𑄋𑄪𑄢𑄳𑄦𑄪𑄇𑄴</span> [xaŋurʰuk], <span class="chakma-text">𑄌𑄋𑄴𑄟𑄳𑄦</span> [caŋmʰa] ইত্যাদি।</p>
+                    <p><b>অন্ত্যে:</b> <span class="chakma-text">𑄢𑄳𑄦𑄧𑄁𑄢𑄳𑄦𑄁</span> [rʰɔŋrʰaŋ], <span class="chakma-text">𑄉𑄋𑄴/𑄉𑄁</span> [ɡaŋ], <span class="chakma-text">𑄥𑄧𑄁</span> [sɔŋ] ইত্যাদি।</p>
+                    <hr class="my-3 border-dashed">
+                    <p><b>𑄋𑄳𑄦 :</b> এটি চিলেম-ঙা’র মহাপ্রাণ (aspirated) ধ্বনি। বর্ণীকরণ হবে /ŋʰ/। এর জন্য স্বতন্ত্র চাকমা বর্ণ না থাকলেও চাকমা ভাষায় ধ্বনিমূল হিসেবে এর ব্যবহার অত্যন্ত গুরুত্বপূর্ণ। এই মহাপ্রাণ ধ্বনির (<span class="chakma-text">𑄋𑄳𑄦</span>)স্থলে অল্পপ্রাণ 𑄋 বসালে সম্পূর্ণ ভিন্ন অর্থ প্রকাশ পায়, যেমন <span class="chakma-text">𑄇𑄧𑄋 < 𑄇𑄧𑄋𑄳𑄦</span>, <span class="chakma-text">𑄣𑄪𑄋𑄨 < 𑄣𑄪𑄋𑄳𑄦𑄨</span>। চাকমা ভাষায় এই ধ্বনি শুধু শব্দের মধ্যে পাওয়া যায়।</p>
+                    <p><b>মধ্যে:</b> <span class="chakma-text">𑄌𑄋𑄳𑄦𑄨</span> [caŋʰi] 𑄇𑄝𑄧𑄢𑄴, <span class="chakma-text">𑄃𑄋𑄳𑄦𑄪</span> [aŋʰu] 𑄉𑄧𑄏, <span class="chakma-text">𑄇𑄧𑄋𑄳𑄦</span> [xɔŋʰa], <span class="chakma-text">𑄝𑄋𑄳𑄦𑄟𑄬𑅅𑄌𑄳𑄠𑄬</span> [baŋʰamocce], <span class="chakma-text">𑄣𑄪𑄋𑄳𑄦𑄨</span> [luŋʰi] 𑄟𑄢𑄚 ইত্যাদি।</p>
+                `
+            },
+            { 
+                chakma: '𑄌', name: 'Dwidhellye', transliteration: { en: 'Cha', bn: 'চা (Cha)' }, ipa: 'IPA: /ɕ/', guideImage: 'cha direction.png',
+                ipa_details: `
+                    <p><b>𑄌 : দ্বিধেল্যে-চা</b> হচ্ছে অঘোষ ঘর্ষণজাত তালব্য অল্পপ্রাণ (voiceless fricative palatal unaspirated) ধ্বনি, যার বর্ণীকরণ হবে /ç/। শব্দের আদি, মধ্যে ও অন্ত্যে এই ধ্বনি পাওয়া যায়। বাংলা বর্ণীকরণে ‘চ’ হলেও এর উচ্চারণ বাংলা বর্ণটির মত স্পষ্ট নয়, pitch তুলনামূলক কম।</p>
+                    <p><b>আদিতে:</b> <span class="chakma-text">𑄌𑄪𑄉𑄬𑅅𑄢𑄴</span> [çugor], <span class="chakma-text">𑄌𑄧𑄉𑄧𑄘</span> [çɔɡɔda], <span class="chakma-text">𑄌𑄪𑄟𑄬𑅅</span> [çumo] ইত্যাদি।</p>
+                    <p><b>মধ্যে:</b> <span class="chakma-text">𑄃𑄬𑄬𑄌𑄴𑄨</span> [eççi], <span class="chakma-text">𑄥𑄧𑄌𑄴𑄧𑄢𑄧𑄟𑄴</span> [sɔççɔrɔm], <span class="chakma-text">𑄇𑄬𑄬𑄌𑄴</span> [xeç] ইত্যাদি।</p>
+                    <p><b>অন্ত্যে:</b> <span class="chakma-text">𑄞𑄌𑄴</span> [bʰaç], <span class="chakma-text">𑄉𑄌𑄴</span> [ɡaç], <span class="chakma-text">𑄙𑄧𑄌𑄴</span> [dʰɔç] ইত্যাদি।</p>
+                `
+            },
+            { 
+                chakma: '𑄍', name: 'Mojojjye', transliteration: { en: 'Chha', bn: 'ছা (Chha)' }, ipa: 'IPA: /ɕʰ/', guideImage: 'chha direction.png',
+                ipa_details: `
+                    <p><b>𑄍 : মোজজ্যে-ছা</b> হচ্ছে অঘোষ ঘর্ষণজাত তালব্য মহাপ্রাণ (voiceless fricative palatal aspirated) ধ্বনি, যার বর্ণীকরণ হবে /çʰ/। শব্দের আদি ও মধ্যে এই ধ্বনি পাওয়া যায়। বাংলা বর্ণীকরণে ‘ছ’ হলেও এর উচ্চারণ বাংলা বর্ণটির মত স্পষ্ট নয়, pitch তুলনামূলক কম। </p>
+                    <p><b>আদিতে:</b> <span class="chakma-text">𑄍𑄘𑄨</span> [çʰadi], <span class="chakma-text">𑄍𑄧𑄢</span> [çʰra], <span class="chakma-text">𑄍𑄨𑄠𑄬𑄁</span> [çʰieŋ] ইত্যাদি।</p>
+                    <p><b>মধ্যে:</b> <span class="chakma-text">𑄃𑄬𑄬𑄌𑄴𑄍𑄨</span> [eççʰi], <span class="chakma-text">𑄃𑄪𑄌𑄴𑄍𑄬𑅅</span> [uççʰo], <span class="chakma-text">𑄞𑄌𑄴𑄍𑄪𑄢𑄨</span> [bʰaççʰuri] ইত্যাদি।</p>
+                `
+            },
+            { 
+                chakma: '𑄎', name: 'Dwipodola', transliteration: { en: 'Ja', bn: 'জা (Ja)' }, ipa: 'IPA: /z/', guideImage: 'ja direction.png',
+                ipa_details: `
+                    <p><b>𑄎, 𑄡 : দ্বিপদলা-জা ও জিল্যে-যা</b> হচ্ছে ঘোষ ঘর্ষণজাত দন্তমূলীয় অল্পপ্রাণ (voiced fricative alveolar unaspirated) ধ্বনি, এদের বর্ণীকরণ হবে /z/। শব্দের আদি ও মধ্যে এই ধ্বনি পাওয়া যায়। বিশেষত চাকমা শব্দে দ্বিপদলা-জা ব্যবহার করা হয়। বাংলা বর্ণীকরণে ‘জ’ হলেও এর উচ্চারণ বাংলা বর্ণটির মত স্পষ্ট নয়, pitch তুলনামূলক কম।। </p>
+                    <p><b>আদিতে:</b> <span class="chakma-text">𑄎𑄉</span> [zaga], <span class="chakma-text">𑄎𑄧𑄉𑄧𑄘𑄁</span> [zɔɡɔdaŋ], <span class="chakma-text">𑄎𑄪𑄟𑄴</span> [zum] ইত্যাদি।</p>
+                    <p><b>মধ্যে:</b> <span class="chakma-text">𑄃𑄎</span> [aza], <span class="chakma-text">𑄇𑄎𑄧𑄢𑄴</span> [xazɔr], <span class="chakma-text">𑄇𑄬𑅅𑄎𑄳𑄠𑄬𑄬</span> [xozze] ইত্যাদি।</p>
+                `
+            },
+            { 
+                chakma: '𑄏', name: 'Urourhi', transliteration: { en: 'Jha', bn: 'ঝা (Jha)' }, ipa: 'IPA: /zʰ/', guideImage: 'jha direction.png',
+                ipa_details: `
+                    <p><b>𑄏 : উরোউরি-ঝা</b> হচ্ছে ঘোষ ঘর্ষণজাত দন্তমূলীয় মহাপ্রাণ (voiced fricative alveolar aspirated) ধ্বনি, যার বর্ণীকরণ হবে /zʰ/। শব্দের আদি, মধ্যে ও অন্ত্যে এই ধ্বনি পাওয়া যায়। বাংলা বর্ণীকরণে ‘ঝ’ হলেও এর উচ্চারণ বাংলা বর্ণটির মত স্পষ্ট নয়, pitch তুলনামূলক কম।।</p>
+                    <p><b>আদিতে:</b> <span class="chakma-text">𑄏𑄉</span> [zʰaga], <span class="chakma-text">𑄏𑄇𑄴𑄬𑅅</span> [zʰakko], <span class="chakma-text">𑄏𑄪𑄣𑄴</span> [zʰul] ইত্যাদি।</p>
+                    <p><b>মধ্যে:</b> <span class="chakma-text">𑄃𑄏</span> [azʰa], <span class="chakma-text">𑄆𑄏𑄚</span> [ɛzanʰa], <span class="chakma-text">𑄝𑄬𑅅𑄏𑄬𑄇𑄴</span> [bozʰek] ইত্যাদি।</p>
+                `
+            },
+            { 
+                chakma: '𑄐', name: 'Chilocchye', transliteration: { en: 'Nya', bn: 'ঞা (Nya)' }, ipa: 'IPA: /ɲ/', guideImage: 'nya direction.png',
+                ipa_details: `
+                    <p><b>𑄐 : চিলোস্যে-ঞা</b> হচ্ছে অঘোষ নাসিক্য তালব্য অল্পপ্রাণ (voiceless nasal palatal unaspirated) ধ্বনি, যার বর্ণীকরণ হবে /ɲ/। শুধু শব্দের মধ্যে এই ধ্বনি পাওয়া যায়।</p>
+                    <p><b>মধ্যে:</b> <span class="chakma-text">𑄟𑄳𑄦𑄨𑄐𑄧𑄁</span> [mʰiɲɔŋ], <span class="chakma-text">𑄛𑄪𑄐𑄳𑄠𑄧</span> (puɲɲɔ), <span class="chakma-text">𑄥𑄪𑄐𑄳𑄠𑄧</span>(suɲɲɔ), <span class="chakma-text">𑄃𑄬𑅅𑄐𑄳𑄠𑄧</span>(oɲɲo) ইত্যাদি।</p>
+                `
+            },
+            { chakma: '𑄑', name: 'Dwihadat', transliteration: { en: 'Ta', bn: 'টা (Ta)' }, ipa: 'IPA: /ʈ/', guideImage: 'Tta direction.png' },
+            { chakma: '𑄒', name: 'Phudodwihat', transliteration: { en: 'Tha', bn: 'ঠা (Tha)' }, ipa: 'IPA: /ʈʰ/', guideImage: 'Ttha direction.png' },
+            { chakma: '𑄓', name: 'Adhubhangat', transliteration: { en: 'Da', bn: 'ডা (Da)' }, ipa: 'IPA: /ɖ/', guideImage: 'dda direction.png' },
+            { chakma: '𑄔', name: 'Lecbhorat', transliteration: { en: 'Dha', bn: 'ঢা (Dha)' }, ipa: 'IPA: /ɖʰ/', guideImage: 'ddhadirection.png' },
+            { chakma: '𑄕', name: 'Pettua', transliteration: { en: 'Na', bn: 'ণা (Na)' }, ipa: 'IPA: /n/', guideImage: 'nna direction.png' },
+            { 
+                chakma: '𑄖', name: 'Ghongodat', transliteration: { en: 'Ta', bn: 'তা (Ta)' }, ipa: 'IPA: /t̪/', guideImage: 'ta direction.png',
+                ipa_details: `
+                    <p><b>𑄖 : ঘোঙ দাত-তা</b> হচ্ছে অঘোষ স্পর্শ দন্তমূলীয় অল্পপ্রাণ (voiceless plosive alveolar unaspirated) ধ্বনি, যার বর্ণীকরণ হবে /t̪/। শব্দের আদি, মধ্যে ও অন্ত্যে এই ধ্বনি পাওয়া যায়।</p>
+                    <p><b>আদিতে:</b> <span class="chakma-text">𑄖𑄬𑄉𑄬𑄚𑄴</span> [t̪eɡen], <span class="chakma-text">𑄖𑄬𑅅𑄣𑄰</span> [t̪o।oi], <span class="chakma-text">𑄖𑄉𑄧𑄣𑄴</span> [t̪aɡɔl] ইত্যাদি।</p>
+                    <p><b>মধ্যে:</b> <span class="chakma-text">𑄇𑄬𑄖𑄴𑄇𑄬𑄖𑄳𑄠𑄬</span> [xet̪xet̪t̪e], <span class="chakma-text">𑄎𑄖𑄴</span> [zat̪], <span class="chakma-text">𑄎𑄧𑄖𑄴𑄧𑄚𑄴</span> [zɔt̪t̪ɔn] ইত্যাদি।</p>
+                    <p><b>অন্ত্যে:</b> <span class="chakma-text">𑄉𑄖𑄴</span> [ɡat], <span class="chakma-text">𑄎𑄪𑄖𑄴</span> [zut], <span class="chakma-text">𑄈𑄬𑄖𑄴</span> [xʰt̪t] ইত্যাদি।</p>
+                `
+            },
+            { 
+                chakma: '𑄗', name: 'Jogodat', transliteration: { en: 'Tha', bn: 'থা (Tha)' }, ipa: 'IPA: /t̪ʰ/', guideImage: 'tha direction.png',
+                ipa_details: `
+                    <p><b>𑄗 : জগদাত-থা</b> হচ্ছে অঘোষ স্পর্শ দন্তমূলীয় মহাপ্রাণ (voiceless plosive alveolar aspirated) ধ্বনি, যার বর্ণীকরণ হবে /t̪ʰ/। চাকমা শব্দের আদি ও মধ্যে এই ধ্বনি পাওয়া যায়।</p>
+                    <p><b>আদিতে:</b> <span class="chakma-text">𑄗𑄪𑄉𑄪𑄢𑄨</span> [tʰuɡuri], <span class="chakma-text">𑄗𑄬𑄚𑄴𑄗𑄬𑄚𑄨</span> [t̪ʰent̪ʰeni], <span class="chakma-text">𑄗𑄧𑄝𑄇𑄴</span> [t̪ʰɔbak] ইত্যাদি।</p>
+                    <p><b>মধ্যে:</b> <span class="chakma-text">𑄛𑄧𑄖𑄴𑄗𑄚𑄴</span> [pɔt̪t̪ʰan], <span class="chakma-text">𑄃𑄧𑄇𑄴𑄗𑄧</span> [ɔkt̪ʰɔ], <span class="chakma-text">𑄇𑄪𑄖𑄴𑄗𑄪𑄚𑄴</span> [xut̪t̪ʰun] ইত্যাদি।</p>
+                `
+            },
+            { 
+                chakma: '𑄘', name: 'Dhulonit', transliteration: { en: 'Da', bn: 'দা (Da)' }, ipa: 'IPA: /d̪/', guideImage: 'da direction.png',
+                ipa_details: `
+                    <p><b>𑄘 : ধুলোনিত-দা</b> হচ্ছে ঘোষ স্পর্শ দন্তমূলীয় অল্পপ্রাণ (voiced plosive alveolar unaspirated) ধ্বনি, যার বর্ণীকরণ হবে /d̪/। শব্দের আদি ও মধ্যে এই ধ্বনি পাওয়া যায়।</p>
+                    <p><b>আদিতে:</b> <span class="chakma-text">𑄘𑄬𑅅𑄉𑄬𑅅𑄚𑄴</span> [d̪oɡon], <span class="chakma-text">𑄘𑄧𑄇𑄴</span> [d̪ɔk], <span class="chakma-text">𑄘𑄢𑄪</span> [d̪aru] ইত্যাদি।</p>
+                    <p><b>মধ্যে:</b> <span class="chakma-text">𑄃𑄧𑄘 𑄃𑄧𑄘</span> [ɔd̪a ɔd̪a], <span class="chakma-text">𑄃𑄘𑄪𑄢𑄨</span> [aduri], <span class="chakma-text">𑄃𑄘𑄴𑄙𑄚𑄴</span> [ad̪d̪ʰan] ইত্যাদি।</p>
+                `
+            },
+            { 
+                chakma: '𑄙', name: 'Tolmuot', transliteration: { en: 'Dha', bn: 'ধা (Dha)' }, ipa: 'IPA: /d̪ʰ/', guideImage: 'dha direction.png',
+                ipa_details: `
+                    <p><b>𑄙 : তলমুওত-ধা</b> হচ্ছে ঘোষ স্পর্শ দন্তমূলীয় মহাপ্রাণ (voiced plosive alveolar aspirated) ধ্বনি, যার বর্ণীকরণ হবে /dʰ/। শব্দের আদি ও মধ্যে এই ধ্বনি পাওয়া যায়।</p>
+                    <p><b>আদিতে:</b> <span class="chakma-text">𑄙𑄧𑄇𑄴</span> [d̪ʰɔk], <span class="chakma-text">𑄙𑄧𑄚</span> [d̪ʰɔna], <span class="chakma-text">𑄙𑄬𑄇𑄴</span> [d̪ʰɛk] ইত্যাদি।</p>
+                    <p><b>মধ্যে:</b> <span class="chakma-text">𑄃𑄙</span> [ad̪ʰa], <span class="chakma-text">𑄅𑄙𑄬𑅅𑄢𑄴</span> [ud̪ʰor], <span class="chakma-text">𑄟𑄧𑄙𑄪</span> [mod̪ʰu] ইত্যাদি।</p>
+                `
+            },
+            { 
+                chakma: '𑄚', name: 'Pharbannhye', transliteration: { en: 'Na', bn: 'না (Na)' }, ipa: 'IPA: /n/', guideImage: 'na direction.png',
+                ipa_details: `
+                    <p><b>𑄚 : ফারবান্যেহ্-না</b> হচ্ছে ঘোষ নাসিক্য দন্তমূলীয় অল্পপ্রাণ (voiced nasal alveolar unaspirated) ধ্বনি, যার বর্ণীকরণ হবে /n/। শব্দের আদি, মধ্যে ও অন্ত্যে এই ধ্বনি পাওয়া যায়।</p>
+                    <p><b>আদিতে:</b> <span class="chakma-text">𑄚𑄋𑄴</span> [naŋ], <span class="chakma-text">𑄚𑄉𑄚𑄇𑄳𑄠𑄬</span> [naɡanakke], <span class="chakma-text">𑄚𑄨𑄣𑄬𑅅𑄌𑄴</span> [niloç] ইত্যাদি।</p>
+                    <p><b>মধ্যে:</b> <span class="chakma-text">𑄇𑄚</span> [xana], <span class="chakma-text">𑄥𑄳𑄚𑄧𑄞𑄳𑄚𑄧</span> [çʰnɔbʰnɔ], <span class="chakma-text">𑄝𑄚</span> [bana] ইত্যাদি।</p>
+                    <p><b>অন্ত্যে:</b> <span class="chakma-text">𑄟𑄬𑅅𑄚𑄴</span> [mon], <span class="chakma-text">𑄎𑄪𑄚𑄴</span> [zun], <span class="chakma-text">𑄈𑄬𑄚𑄴</span> [xʰɛn] ইত্যাদি।</p>
+                    <hr class="my-3 border-dashed">
+                    <p><b>𑄚𑄳𑄦 :</b> এটি ফারban্যেহ্-না এর মহাপ্রাণরূপ (aspirated), যার বর্ণীকরণ হবে /nʰ/। শব্দের আদি, মধ্যে ও অন্ত্যে এই ধ্বনি পাওয়া যায়।</p>
+                    <p><b>আদিতে:</b> <span class="chakma-text">𑄚𑄳𑄦𑄨𑄉𑄨𑄣𑄚</span> [nʰigilana], <span class="chakma-text">𑄚𑄳𑄦𑄘𑄬𑄬𑄁</span> [nʰadeŋ] ইত্যাদি।</p>
+                    <p><b>মধ্যে:</b> <span class="chakma-text">𑄇𑄚𑄳𑄦</span> [xanʰa], <span class="chakma-text">𑄝𑄚𑄳𑄦</span> [banʰa], <span class="chakma-text">𑄎𑄪𑄚𑄳𑄦𑄨</span> [zunʰi] ইত্যাদি।</p>
+                `
+            },
+            { 
+                chakma: '𑄛', name: 'Phallye', transliteration: { en: 'Pa', bn: 'পা (Pa)' }, ipa: 'IPA: /p/', guideImage: 'pa direction.png',
+                ipa_details: `
+                    <p><b>𑄛 : ফাল্যে-পা</b> হচ্ছে অঘোষ স্পর্শ দ্বি-ওষ্ঠ অল্পপ্রাণ (voiceless plosive bilabial unaspirated) ধ্বনি, যার বর্ণীকরণ হবে /p/। শব্দের আদি, মধ্যে ও অন্ত্যে এই ধ্বনি পাওয়া যায়।</p>
+                    <p><b>আদিতে:</b> <span class="chakma-text">𑄛𑄇𑄴𑄈𑄬𑅅𑄚𑄴</span> [pakkʰon], <span class="chakma-text">𑄛𑄪𑄏𑄬𑅅𑄇𑄴</span> [puzʰok], <span class="chakma-text">𑄛𑄬𑄬𑄇𑄴</span> [pek] ইত্যাদি।</p>
+                    <p><b>মধ্যে:</b> <span class="chakma-text">𑄥𑄧𑄛𑄴𑄛𑄚𑄧𑄖𑄴</span> [sɔppanɔt], <span class="chakma-text">𑄙𑄧𑄚𑄴𑄛𑄪𑄘𑄨</span> [dʰɔnpudi] , <span class="chakma-text">𑄉𑄧𑄛𑄴𑄬𑅅</span> [ɡoppo] ইত্যাদি।</p>
+                    <p><b>অন্ত্যে:</b> <span class="chakma-text">𑄉𑄛𑄴</span> [ɡap], <span class="chakma-text">𑄏𑄪𑄛𑄴</span> [zʰup], <span class="chakma-text">𑄈𑄬𑄛𑄴</span> [xʰep] ইত্যাদি।</p>
+                `
+            },
+            { 
+                chakma: '𑄜', name: 'Uborpodola', transliteration: { en: 'Pha', bn: 'ফা (Pha)' }, ipa: 'IPA: /pʰ/', guideImage: 'pha direction.png',
+                ipa_details: `
+                    <p><b>𑄜 : উবরপদলা-ফা</b> হচ্ছে অঘোষ স্পর্শ দ্বি-ওষ্ঠ মহাপ্রাণ (voiceless plosive bilabial aspirated) ধ্বনি, যার বর্ণীকরণ হবে /pʰ/। চাকমা শব্দের আদি ও মধ্যে এই ধ্বনি পাওয়া যায়।</p>
+                    <p><b>আদিতে:</b> <span class="chakma-text">𑄜𑄧𑄉𑄧𑄚</span> [pʰɔɡɔna], <span class="chakma-text">𑄜𑄪𑄣𑄴</span> [pʰul], <span class="chakma-text">𑄜𑄪𑄚𑄨</span> [pʰuni] ইত্যাদি।</p>
+                    <p><b>মধ্যে:</b> <span class="chakma-text">𑄎𑄟𑄴𑄜𑄢𑄴</span> [zampʰar], <span class="chakma-text">𑄣𑄬𑄟𑄴𑄜𑄧</span> [lempʰɔ] ইত্যাদি।</p>
+                `
+            },
+            { 
+                chakma: '𑄝', name: 'Ubormuo', transliteration: { en: 'Ba', bn: 'বা (Ba)' }, ipa: 'IPA: /b/', guideImage: 'ba direction.png',
+                ipa_details: `
+                    <p><b>𑄝 : উবরমুও-বা</b> হচ্ছে ঘোষ স্পর্শ দ্বি-ওষ্ঠ অল্পপ্রাণ (voiced plosive bilabial unaspirated) ধ্বনি, যার বর্ণীকরণ হবে /b/। শব্দের আদি ও মধ্যে এই ধ্বনি পাওয়া যায়।</p>
+                    <p><b>আদিতে:</b> <span class="chakma-text">𑄝𑄇𑄴𑄬𑅅𑄚𑄴</span> [bakkon], <span class="chakma-text">𑄝𑄬𑄋</span> [bɛŋa], <span class="chakma-text">𑄝𑄨𑄏𑄪</span> [bizʰu] ইত্যাদি।</p>
+                    <p><b>মধ্যে:</b> <span class="chakma-text">𑄥𑄟𑄴𑄝𑄖𑄴</span> [sambat], <span class="chakma-text">𑄦𑄝</span> [ʔaba] , <span class="chakma-text">𑄉𑄧𑄝𑄧𑄣</span> [ɡɔbɔla] ইত্যাদি।</p>
+                `
+            },
+            { 
+                chakma: '𑄞', name: 'Cherdajjye', transliteration: { en: 'Bha', bn: 'ভা (Bha)' }, ipa: 'IPA: /bʰ/', guideImage: 'bha direction.png',
+                ipa_details: `
+                    <p><b>𑄞: চেরধেল্যে-ভা</b> হচ্ছে ঘোষ স্পর্শ দ্বি-ওষ্ঠ মহাপ্রাণ (voiced plosive bilabial aspirated) ধ্বনি, যার বর্ণীকরণ হবে /bʰ/। শব্দের আদি ও মধ্যে এই ধ্বনি পাওয়া যায়।</p>
+                    <p><b>আদিতে:</b> <span class="chakma-text">𑄞𑄣𑄧𑄇𑄴</span> [bʰalɔk], <span class="chakma-text">𑄞𑄬𑅅𑄚𑄴</span> [bʰon], <span class="chakma-text">𑄞𑄬𑄖𑄴</span> [bʰɛt] ইত্যাদি।</p>
+                    <p><b>মধ্যে:</b> <span class="chakma-text">𑄌𑄟𑄴𑄞𑄖𑄴</span> [çambʰat], <span class="chakma-text">𑄣𑄧𑄞𑄙𑄧𑄌𑄳𑄠𑄬</span> [lɔbʰadʰɔcce], <span class="chakma-text">𑄇𑄪𑄞𑄬𑅅</span> [xubʰo] ইত্যাদি।</p>
+                `
+            },
+            { 
+                chakma: '𑄟', name: 'Bugotpodola', transliteration: { en: 'Ma', bn: 'মা (Ma)' }, ipa: 'IPA: /m/', guideImage: 'ma direction.png',
+                ipa_details: `
+                    <p><b>𑄟 : বুগোতপদলা-মা</b> হচ্ছে ঘোষ নাসিক্য দ্বি-ওষ্ঠ অল্পপ্রাণ (voiced nasal bilabial unaspirated) ধ্বনি, যার বর্ণীকরণ হবে /m/। শব্দের আদি, মধ্যে ও অন্ত্যে এই ধ্বনি পাওয়া যায়।</p>
+                    <p><b>আদিতে:</b> <span class="chakma-text">𑄟𑄧𑄚𑄴</span> [mɔn], <span class="chakma-text">𑄟𑄧𑄢𑄴</span> [mɔr], <span class="chakma-text">𑄟𑄧𑄙𑄪</span> [modʰu] ইত্যাদি।</p>
+                    <p><b>মধ্যে:</b> <span class="chakma-text">𑄝𑄬𑅅𑄟𑄴𑄝</span> [bomba], <span class="chakma-text">𑄎𑄧𑄢𑄴𑄟𑄧</span> [zɔrmɔ], <span class="chakma-text">𑄇𑄟𑄴𑄱</span> [xamʷa] ইত্যাদি।</p>
+                    <p><b>অন্ত্যে:</b> <span class="chakma-text">𑄌𑄟𑄴</span> [çam], <span class="chakma-text">𑄉𑄧𑄟𑄴</span> [ɡɔm], <span class="chakma-text">𑄇𑄪𑄟𑄴</span> [xum] ইত্যাদি।</p>
+                    <hr class="my-3 border-dashed">
+                    <p><b>𑄟𑄳𑄦 :</b> এটি বুগোতপদলা-মা এর মহাপ্রাণরূপ (aspirated) , যার বর্ণীকরণ হবে /mʰ/। চাকমা বর্ণমালায় এই ধ্বনির স্বতন্ত্র বর্ণ না থাকলেও চাকমা শব্দে এই ধ্বনির উপস্থিতি চোখে পড়ার মতো। শব্দের আদি ও মধ্যে এই ধ্বনি পাওয়া যায়।</p>
+                    <p><b>আদিতে:</b> <span class="chakma-text">𑄟𑄳𑄦𑄧</span> [mʰɔ], <span class="chakma-text">𑄟𑄳𑄦𑄬𑅅𑄢𑄧𑄁</span> [mʰorɔŋ] ইত্যাদি।</p>
+                    <p><b>মধ্যে:</b> <span class="chakma-text">𑄃𑄟𑄳𑄦</span> [amʰa], <span class="chakma-text">𑄣𑄟𑄳𑄦</span> [lamʰa], <span class="chakma-text">𑄇𑄟𑄳𑄦</span> [xamʰa] ইত্যাদি।</p>
+                `
+            },
+            { 
+                chakma: '𑄡', name: 'Jillye', transliteration: { en: 'Ya', bn: 'যা (Ya)' }, ipa: 'IPA: /z/', guideImage: 'za direction.png',
+                ipa_details: `
+                    <p><b> 𑄡 : দ্বিপদলা-জা ও জিল্যে-যা</b> আলাদা বর্ণ হলেও উচ্চারণ একই। তাই জিল্যে-যাও দ্বিপদলা-জা এর মত ঘোষ ঘর্ষণজাত দন্তমূলীয় অল্পপ্রাণ (voiced fricative alveolar unaspirated) ধ্বনি, এদের বর্ণীকরণ হবে /z/। শব্দের আদি ও মধ্যে এই ধ্বনি পাওয়া যায়। বিশেষত চাকমা শব্দে দ্বিপদলা-জা ব্যবহার করা হয়। বাংলা বর্ণীকরণে ‘য’ হলেও এর উচ্চারণ বাংলা বর্ণটির মত স্পষ্ট নয়, pitch তুলনামূলক কম।। </p>
+                    <p><b>আদিতে:</b> <span class="chakma-text">𑄡𑄚</span> [zana], <span class="chakma-text">𑄡𑄖𑄳𑄢</span> [zat̪ra], <span class="chakma-text">𑄡𑄪𑄘𑄴𑄙𑄬𑅅</span> [zud̪d̪ʰo] ইত্যাদি।</p>
+                    <p><b>মধ্যে:</b> <span class="chakma-text">𑄥𑄪𑄡𑄴𑄬𑅅</span> [suzzo], <span class="chakma-text">𑄙𑄬𑅅𑄎𑄴𑄬𑅅</span> [d̪ʰozzo] ইত্যাদি।</p>
+                `
+            },
+            { 
+                chakma: '𑄢', name: 'Dwidajjye', transliteration: { en: 'Ra', bn: 'রা (Ra)' }, ipa: 'IPA: /r/', guideImage: 'ra direction.png',
+                ipa_details: `
+                    <p><b>𑄢 : দ্বিদাচ্যে-রা</b> ঘোষ কম্পনজাত দন্তমূলীয় অল্পপ্রাণ (voiced trill alveolar unaspirated) ধ্বনি। এর বর্ণীকরণ হবে /r/। শব্দের আদি, মধ্যে ও অন্ত্যে এই ধ্বনি পাওয়া যায়।</p>
+                    <p><b>আদিতে:</b> <span class="chakma-text">𑄢𑄋</span> [mɔn], <span class="chakma-text">𑄢𑄬𑅅𑄎𑄬𑄭</span> [rozei], <span class="chakma-text">𑄢𑄬𑄉</span> [reɡa] ইত্যাদি।</p>
+                    <p><b>মধ্যে:</b> <span class="chakma-text">𑄝𑄪𑄢𑄬𑅅</span> [buro], <span class="chakma-text">𑄌𑄧𑄇𑄳𑄢𑄧𑄟𑄧𑄇𑄳𑄢𑄧</span> [çɔkrɔmɔkrɔ], <span class="chakma-text">𑄟𑄳𑄢𑄧𑄣</span> [mrɔla] ইত্যাদি।</p>
+                    <p><b>অন্ত্যে:</b> <span class="chakma-text">𑄙𑄢𑄴</span> [dʰar], <span class="chakma-text">𑄞𑄪𑄢𑄴</span> [bʰur], <span class="chakma-text">𑄇𑄪𑄢𑄴</span> [xur] ইত্যাদি।</p>
+                    <hr class="my-3 border-dashed">
+                    <p><b>𑄢𑄳𑄦 :</b> এটি দ্বিদাচ্যে-রা’র মহাপ্রাণরূপ (aspirated)। এর বর্ণীকরণ হবে /rʰ/। চাকমা বর্ণমালায় এই ধ্বনির স্বতন্ত্র বর্ণ না থাকলেও চাকমা শব্দে এই ধ্বনির উপস্থিতি চোখে পড়ার মতো। শব্দের আদি ও মধ্যে এই ধ্বনি পাওয়া যায়।</p>
+                    <p><b>আদিতে:</b> <span class="chakma-text">𑄢𑄳𑄦𑄪𑄇𑄴𑄬𑄋𑄴</span> [rʰukkeŋ], <span class="chakma-text">𑄢𑄳𑄦𑄧𑄁𑄢𑄁</span> [rʰɔŋraŋ] ইত্যাদি।</p>
+                    <p><b>মধ্যে:</b> <span class="chakma-text">𑄝𑄪𑄢𑄳𑄦𑄬𑅅</span> [burʰo], <span class="chakma-text">𑄇𑄪𑄢𑄳𑄦𑄬𑅅</span> [xurʰo], <span class="chakma-text">𑄟𑄪𑄢𑄳𑄦𑄬𑅅</span> [murʰo] ইত্যাদি।</p>
+                `
+            },
+            { 
+                chakma: '𑄣', name: 'Tolmuo', transliteration: { en: 'La', bn: 'লা (La)' }, ipa: 'IPA: /l/', guideImage: 'la direction.png',
+                ipa_details: `
+                    <p><b>𑄣 : তলমুও-লা</b> ঘোষ পা̆শ্বিক-নৈকট্যমূলক দন্তমূলীয় অল্পপ্রাণ (voiced lateral approximant alveolar unaspirated) ধ্বনি। এর বর্ণীকরণ হবে /l/। শব্দের আদি, মধ্যে ও অন্ত্যে এই ধ্বনি পাওয়া যায়।</p>
+                    <p><b>আদিতে:</b> <span class="chakma-text">𑄣𑄬𑅅</span> [lo], <span class="chakma-text">𑄣𑄊</span> [laɡʰa], <span class="chakma-text">𑄣𑄋𑄴</span> [laŋ] ইত্যাদি।</p>
+                    <p><b>মধ্যে:</b> <span class="chakma-text">𑄟𑄣</span> [mala], <span class="chakma-text">𑄇𑄳𑄣𑄬𑄇𑄴 𑄇𑄳𑄣𑄬𑄇𑄴</span> [klek klek], <span class="chakma-text">𑄃𑄣𑄏𑄣</span> [alajʰala] ইত্যাদি।</p>
+                    <p><b>অন্ত্যে:</b> <span class="chakma-text">𑄎𑄣𑄴</span> [zal], <span class="chakma-text">𑄏𑄪𑄣𑄴</span> [zʰul], <span class="chakma-text">𑄅𑄣𑄴</span> [ul] ইত্যাদি।</p>
+                    <hr class="my-3 border-dashed">
+                    <p><b>𑅄 :</b> এটি তলমুও-লা’র মহাপ্রাণরূপ (aspirated)। এর বর্ণীকরণ হবে /lʰ/। শব্দের আদি ও মধ্যে এই ধ্বনি পাওয়া যায়।</p>
+                    <p><b>আদিতে:</b> <span class="chakma-text">𑅄𑄪𑄟𑄚</span> [lʰumana], <span class="chakma-text">𑅄𑄬𑄣𑄴𑅄𑄬𑄝𑄨</span> [lʰelʰebi], <span class="chakma-text">𑅄𑄬</span> [lʰe] ইত্যাদি।</p>
+                    <p><b>মধ্যে:</b> <span class="chakma-text">𑄟𑅄</span> [malʰa], <span class="chakma-text">𑄟𑄨𑄎𑄨𑅄𑄨𑄇𑄴</span> [mizilʰik], <span class="chakma-text">𑄛𑄧𑅄𑄨𑄟𑄴</span> [polʰim] ইত্যাদি।</p>
+                `
+            },
+            { 
+                chakma: '𑄤', name: 'Bajhonnye', transliteration: { en: 'Wa', bn: 'ওয়া (Wa)' }, ipa: 'IPA: /ʋ/', guideImage: 'wa direction.png',
+                ipa_details: `
+                    <p><b>𑄤 : বাঝোন্যে-ওয়া/ৰা</b> অঘোষ নৈকট্যমূলক দন্ত্য-ওষ্ঠ্য অল্পপ্রাণ (voiceless approximant labia-dental unaspirated) ধ্বনি। এর বর্ণীকরণ হবে /ʋ/। শব্দের আদি, মধ্যে ও অন্ত্যে এই ধ্বনি পাওয়া যায়।</p>
+                    <p><b>আদিতে:</b> <span class="chakma-text">𑄤𑄋𑄴 𑄤𑄋𑄴</span> [ʋaŋ ʋaŋ] ইত্যাদি।</p>
+                    <p><b>মধ্যে:</b> <span class="chakma-text">𑄘𑄬𑄤𑄚𑄴</span> [deʋan], <span class="chakma-text">𑄥𑄟𑄴𑄳𑄤</span> [sammʷa], <span class="chakma-text">𑄛𑄬𑄖𑄴𑄳𑄤𑄧</span> [pettʷɔ] ইত্যাদি।</p>
+                    <p><b>অন্ত্যে:</b> <span class="chakma-text">𑄉𑄬𑅅𑄤𑄴</span> [goːi], <span class="chakma-text">𑄢𑄬𑅅𑄤𑄴</span> [roːi ], <span class="chakma-text">𑄥𑄪𑄤𑄴</span> [suoi] ইত্যাদি।</p>
+                `
+            },
+            { 
+                chakma: '𑄥', name: 'Bhudibukkye', transliteration: { en: 'Sa', bn: 'সা (Sa)' }, ipa: 'IPA: /s/', guideImage: 'sa direction.png',
+                ipa_details: `
+                    <p><b>𑄥 : ভুদিবুক্যে-সা</b> অঘোষ ঘর্ষণজাত দন্তমূলীয় অল্পপ্রাণ (voiced fricative alveolar unaspirated) ধ্বনি। এর বর্ণীকরণ হবে /s/। চাকমা শব্দের আদিতে এই ধ্বনি পাওয়া যায়।</p>
+                    <p><b>আদিতে:</b> <span class="chakma-text">𑄥𑄪𑄉𑄬𑅅𑄢𑄴</span> [suɡor], <span class="chakma-text">𑄥𑄉𑄧𑄢𑄴</span> [saɡɔr], <span class="chakma-text">𑄥𑄎𑄬𑄇𑄴</span> [sajek] ইত্যাদি।</p>
+                `
+            },
+            { 
+                chakma: '𑄠', name: 'Chimojjye', transliteration: { en: 'Ya', bn: 'য়া (Ya)' }, ipa: 'IPA: /y/', guideImage: 'ya direction.png',
+                ipa_details: `
+                    <p><b>𑄠 : চিমোজ্যে-য়া</b> ঘোষ পার্শ্বিক-নৈকট্যমূলক তালব্য অল্পপ্রাণ (voiced lateral approximant palatal unaspirated) ধ্বনি। এর বর্ণীকরণ হবে /ʎ/। শব্দের আদি, মধ্যে ও অন্ত্যে এই ধ্বনি পাওয়া যায়।</p>
+                    <p><b>আদিতে:</b> <span class="chakma-text">𑄠𑄬𑄬𑄖𑄴</span> [ʎet], <span class="chakma-text">𑄠-𑄦𑄪𑄢𑄨𑄁</span> [ʎa-?uriŋ] ইত্যাদি।</p>
+                    <p><b>মধ্যে:</b> <span class="chakma-text">𑄥𑄨𑄠𑄬𑄣𑄴</span> [siʎel], <span class="chakma-text">𑄢𑄪𑄌𑄳𑄠𑄬𑄣𑄴</span> [ruccel], <span class="chakma-text">𑄉𑄳𑄠𑄬𑄚𑄴</span> [ɡen] ইত্যাদি।</p>
+                    <p><b>অন্ত্যে:</b> <span class="chakma-text">𑄃𑄬𑅅𑄊𑄬𑅅𑄠𑄴</span> [oɡʰoi], <span class="chakma-text">𑄌𑄬𑅅𑄢𑄳𑄦𑄬𑅅𑄠𑄴</span> [çorʰoi], <span class="chakma-text">𑄃𑄪𑄝𑄬𑅅𑄠𑄴</span> [uboi] ইত্যাদি।</p>
+                `
+            },
+            { 
+                chakma: '𑄦', name: 'Ubormuo', transliteration: { en: 'Ha', bn: 'হা (Ha)' }, ipa: 'IPA: /h/ [ʔ]', guideImage: 'ha direction.png',
+                ipa_details: `
+                    <p><b>𑄦 : উবরমুও-হা</b> এর দুটি সহধ্বনি (allophone) আছে। বাংলাদেশ ও ভারতে অবস্থানরত অধিকাংশ চাকমা উচ্চারণে 𑄦-এর দ্বৈতধ্বনি শোনা যায়। এছাড়াও তঞ্চঙ্গ্যাদের একটি গছা (কার্বোয়া গছা) 𑄦-এর দ্বৈতধ্বনি উচ্চারণ করে কথা বলে। এই দ্বৈতধ্বনিগুলো হচ্ছে মূলধ্বনির সহধ্বনি।</p>
+                    <p>উল্লেখিত সম্প্রদায়ের আত্মীকৃত বা নিজস্ব শব্দে স্বাধীন অবস্থাতে (স্বরযুক্ত তবে হস্‌যুক্ত নয়) এটি মহাপ্রাণ-আ এর ন্যায় উচ্চারিত হয়। এটি অঘোষ স্পর্শ কন্ঠনালীয় মহাপ্রাণ (voiceless plosive glottal aspirated) ধ্বনি, যার বর্ণীকরণ হবে <b>[ʔ]</b>। এই ধ্বনি চাকমা শব্দের আদি ও মধ্যে পাওয়া যায়।</p>
+                    <p><b>আদিতেː</b> <span class="chakma-text">𑄦𑄪𑄢𑄨𑄁</span> [ʔuriŋ], <span class="chakma-text">𑄦𑄬𑄬𑄣𑄴</span> [ʔɛl], <span class="chakma-text">𑄦𑄧𑄉𑄧𑄣𑄧𑄇𑄴</span> [ʔɔɡɔlɔk] ইত্যাদি।</p>
+                    <p><b>মধ্যেː</b> <span class="chakma-text">𑄥𑄧𑄦𑄧𑄢𑄴</span> [sɔʔɔr], <span class="chakma-text">𑄛𑄧𑄦𑄧𑄢𑄴</span> [pɔʔɔr] ইত্যাদি।</p>
+                    <p>আবার, শব্দের মধ্যে ও অন্ত্যে হস্ ও ব্যঞ্জনযুক্তাবস্থায় থাকলে বাংলা হ্ এর ন্যায় উচ্চারিত হয়। এটি অঘোষ ঘর্ষণজাত কন্ঠনালীয় মহাপ্রাণ (voiceless fricative glottal aspirated) ধ্বনি, যার বর্ণীকরণ হবে <b>/h/</b>।</p>
+                    <p><b>মধ্যে:</b> <span class="chakma-text">𑄉𑄦𑄴𑄇𑄴</span> [ɡahk], <span class="chakma-text">𑄇𑄪𑄢𑄳𑄦𑄨</span> [xurʰi] ইত্যাদি।</p>
+                    <p><b>অন্ত্যে:</b> <span class="chakma-text">𑄇𑄧𑄦𑄴</span> [xɔh], <span class="chakma-text">𑄉𑄧𑄦𑄴</span> [ɡɔh], <span class="chakma-text">𑄝𑄦𑄴</span> [bah] ইত্যাদি।</p>
+                    <p><b>স্মর্তব্য:</b> এই ধ্বনিমূল বিশেষ ভাষা ব্যতীত অন্য (বাংলা, ইংরেজি, হিন্দি ইত্যাদি) ভাষায় শব্দের সকল স্থানে স্বাধীন ও যুক্ত অবস্থায় মূলধ্বনি /h/ উচ্চাররিত হবে।</p>
+                `
+            },
+            { 
+                chakma: '𑅄', name: 'Tolmuo', transliteration: { en: 'Lha', bn: 'ল্হা/হ্লা (Lha)' }, ipa: 'IPA: /lʰ/', guideImage: 'lha direction.png',
+                ipa_details: `
+                    <p><b>𑅄 :</b> এটি তলমুও-লা’র মহাপ্রাণরূপ (aspirated)। এর বর্ণীকরণ হবে /lʰ/। শব্দের আদি ও মধ্যে এই ধ্বনি পাওয়া যায়।</p>
+                    <p><b>আদিতে:</b> <span class="chakma-text">𑅄𑄪𑄟𑄚</span> [lʰumana], <span class="chakma-text">𑅄𑄬𑄣𑄴𑅄𑄬𑄝𑄨</span> [lʰelʰebi], <span class="chakma-text">𑅄𑄬𑄬</span> [lʰɛ] ইত্যাদি।</p>
+                    <p><b>মধ্যে:</b> <span class="chakma-text">𑄟𑅄</span> [malʰa], <span class="chakma-text">𑄟𑄨𑄎𑄨𑅄𑄨𑄇𑄴</span> [mizilʰik], <span class="chakma-text">𑄛𑄧𑅄𑄨𑄟𑄴</span> [polʰim] ইত্যাদি।</p>
+                `
+            },
+        ];
+
+        let currentModuleIndex = 0;
+        let currentPageIndex = 0;
+        let currentAlphabetPage = 0;
+        const itemsPerPage = 10;
+
+        const contentArea = document.getElementById('content-area');
+        const modal = document.getElementById('drawing-modal');
+        const modalGuideImage = document.getElementById('modal-guide-image');
+        const ipaModal = document.getElementById('ipa-modal');
+        const ipaModalTitle = document.getElementById('ipa-modal-title');
+        const ipaModalContent = document.getElementById('ipa-modal-content');
+        const canvas = document.getElementById('drawing-canvas');
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
+        let isDrawing = false;
+        let drawingHistory = [];
+        let historyIndex = -1;
+        
+        function setLanguage(lang) {
+            currentLanguage = lang;
+            const t = translations[lang];
+
+            // Update static text
+            document.getElementById('welcome-subtitle').innerText = t.welcomeSubtitle;
+            document.getElementById('start-btn').innerText = t.startBtn;
+            document.getElementById('header-subtitle').innerText = t.headerSubtitle;
+            document.getElementById('draw-modal-title').innerText = t.drawModalTitle;
+            document.getElementById('draw-guide-title').innerText = t.drawGuideTitle;
+            document.getElementById('draw-area-title').innerText = t.drawAreaTitle;
+            document.getElementById('clear-canvas-btn').innerText = t.clearCanvasBtn;
+            document.getElementById('ipa-modal-title').innerText = t.ipaModalTitle;
+            document.getElementById('note-modal-title').innerText = t.noteModalTitle;
+            document.getElementById('lang-toggle-btn').innerText = t.toggleLang;
+            
+            document.body.classList.toggle('bengali-text', lang === 'bn');
+
+
+            // Update dynamic content
+            buildModuleNav();
+            renderModuleContent();
+        }
+
+        function toggleLanguage() {
+            const newLang = currentLanguage === 'en' ? 'bn' : 'en';
+            setLanguage(newLang);
+        }
+
+        function buildModuleNav() {
+            const t = translations[currentLanguage];
+            const navContainer = document.getElementById('module-nav');
+            let navHTML = '';
+            for (let i = 0; i < 5; i++) {
+                navHTML += `<button onclick="showModule(${i})" class="nav-btn px-4 py-2 text-sm md:text-base bg-white rounded-full shadow-md hover:bg-indigo-100 transition-all duration-300" ${i > 0 ? 'disabled' : ''}>${t.module} ${i + 1}</button>`;
+            }
+            navContainer.innerHTML = navHTML;
+        }
+
+        function generateAlphabetHTML(page) {
+            const t = translations[currentLanguage];
+            const startIndex = page * itemsPerPage;
+            const endIndex = startIndex + itemsPerPage;
+            const pageItems = alphabets.slice(startIndex, endIndex);
+            
+            let alphabetGrid = pageItems.map((item, index) => `
+                <div onclick="openModalForAlphabet(${startIndex + index})" class="p-4 rounded-lg alphabet-card text-center flex flex-col justify-between">
+                    <div>
+                        <p class="chakma-font text-indigo-600 mb-1">${item.chakma}</p>
+                        <div class="leading-tight ${currentLanguage === 'bn' ? 'bengali-text' : ''}">
+                            <p class="font-bold text-slate-800">${item.name}</p>
+                            <p class="font-bold text-slate-600 text-sm">${item.transliteration[currentLanguage]}</p>
+                        </div>
+                    </div>
+                    <p class="text-slate-500 text-xs mt-2 cursor-pointer hover:text-indigo-600 hover:underline" onclick="event.stopPropagation(); showIpaDetails(${startIndex + index})">${item.ipa}</p>
+                </div>`).join('');
+
+            return `<div class="flex justify-between items-center mb-3">
+                        <h3 class="text-lg md:text-xl font-semibold text-slate-700 ${currentLanguage === 'bn' ? 'bengali-text' : ''}">${t.consonantPracticeTitle}</h3>
+                        <button onclick="openNoteModal()" class="text-sm bg-sky-100 text-sky-700 font-semibold px-3 py-1 rounded-full hover:bg-sky-200 transition">${t.note}</button>
+                    </div>
+                    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">${alphabetGrid}</div>`;
+        }
+
+        function generateVowelHTML() {
+            const t = translations[currentLanguage];
+            let vowelGrid = vowels.map((vowel, index) => `
+                <div onclick='openModalForVowel(${index})' class="p-4 bg-slate-50 rounded-lg border alphabet-card text-center">
+                    <span class="chakma-vowel text-indigo-600">${vowel.chakma}</span>
+                    <p class="font-bold leading-tight ${currentLanguage === 'bn' ? 'bengali-text' : ''}">${vowel.name[currentLanguage]}</p>
+                </div>`).join('');
+            
+            return `<h3 class="text-lg md:text-xl font-semibold mt-8 mb-3 text-slate-700 ${currentLanguage === 'bn' ? 'bengali-text' : ''}">${t.vowelPracticeTitle}</h3>
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">${vowelGrid}</div>`;
+        }
+        
+        const modules = [
+            {
+                en: {
+                    title: "Module 1: Introduction to Chakma Language and Script",
+                    pages: [
+                        {
+                            title: "1.1 Introduction to Chakma Language and Script",
+                            classTitle: "Class 1",
+                            content: `<div class="space-y-4 text-justify leading-relaxed">
+                                        <details class="bg-slate-50 p-3 rounded-lg" open>
+                                            <summary class="font-semibold cursor-pointer">Introduction and Evolution of Chakma Language</summary>
+                                            <div class="mt-2 space-y-2">
+                                                <p>The Chakma language, known locally as 'Changmah Bhach' or 'Changmah Kodha', is a historically significant language in South Asia, highly important to researchers for its linguistic features. Its speakers primarily reside in the Chittagong Hill Tracts of Bangladesh, their main homeland. Additionally, significant numbers of Chakma speakers are found in Mizoram, Tripura, Arunachal Pradesh, and Assam in India, as well as in various provinces of Myanmar. About one million people worldwide speak this language.</p>
+                                                <p>Modern Chakma is an Indo-Aryan language, though its original roots were in a Tibeto-Burman language. According to researchers, the Chakma people underwent a complete 'language shift' over time due to contact with neighboring Indo-Aryan speakers. Despite this change, some phonetic and lexical features from their original Tibeto-Burman language, known as 'substrate influence', remain, distinguishing the Chakma language from other Indo-Aryan languages.</p>
+                                            </div>
+                                        </details>
+                                        <details class="bg-slate-50 p-3 rounded-lg">
+                                            <summary class="font-semibold cursor-pointer">Evolution and Features of Chakma Script</summary>
+                                            <div class="mt-2 space-y-2">
+                                                <p>There are two main theories about the origin of the Chakma script. The most widely accepted theory is that it evolved from the Burmese script, which itself originates from the South Indian Brahmi script (Brahmi > Pallava > Burmese > Chakma). However, recent research suggests a more complex evolution, linking it to the ancient 'Kawi' script of Southeast Asia (Brahmi > Pallava > Kawi > Chakma). According to this research, the internal structure of the Chakma script is more consistent with the Kawi script.</p>
+                                                <p>The Chakma script is an 'abugida' or alphasyllabary, where each consonant has an inherent vowel sound. Its most unique feature is that its inherent vowel is 'a' (as in father), not 'o' (as in hot) like in Bengali. This means a letter without any vowel sign, such as <span class="chakma-text">𑄇</span>, is pronounced 'ka', not 'ko'. To silence this inherent 'a' sound, a special sign called 'mazzhe' (<span class="chakma-text">𑄴</span>) is used, which functions like the 'hasanta' (্) in Bengali.</p>
+                                            </div>
+                                        </details>
+                                        <details class="bg-slate-50 p-3 rounded-lg">
+                                            <summary class="font-semibold cursor-pointer">What is Ojhapath?</summary>
+                                            <div class="mt-2 space-y-2">
+                                                <p>'Ojhapath' is the name of the traditional script used by the Chakma people. Its origin is believed to be the ancient Brahmi script. Historically, 'Ojhapath' was mainly confined to Chakma ojhas (priests) and baidyas (village doctors). This script was used in manuscripts like the religious text ‘Agartara’ and the medical text ‘Baidyali Pudhi’, through which it has been preserved from generation to generation.</p>
+                                            </div>
+                                        </details>
+                                    </div>`
+                        },
+                        {
+                            title: "1.2 Ojhapath (Chakma Alphabet)",
+                            assignments: [
+                                `<p><b>Practice:</b> Write the ten consonants from <span class="chakma-text">𑄇</span> to <span class="chakma-text">𑄐</span> in your notebook and post it in the designated Facebook group.</p>`,
+                                `<p><b>Practice:</b> Write the ten consonants from <span class="chakma-text">𑄑</span> to <span class="chakma-text">𑄚</span> and post it in the designated Facebook group.</p>`,
+                                ``,
+                                `<p><b>Practice:</b> Write the last thirteen consonants from <span class="chakma-text">𑄛</span> to <span class="chakma-text">𑅄</span> and all the vowels, then post in the designated Facebook group.</p>`
+                            ],
+                        }
+                    ]
+                },
+                bn: {
+                    title: "মডিউল ১: চাকমা ভাষা ও লিপির পরিচিতি",
+                    pages: [
+                        {
+                            title: "১.১ চাকমা ভাষা ও লিপির পরিচিতি",
+                            classTitle: "প্রথম ক্লাস",
+                            content: `<div class="space-y-4 text-justify leading-relaxed bengali-text">
+                                        <details class="bg-slate-50 p-3 rounded-lg" open>
+                                            <summary class="font-semibold cursor-pointer">চাকমা ভাষার পরিচিতি ও বিবর্তন</summary>
+                                            <div class="mt-2 space-y-2">
+                                                <p>চাকমা ভাষা, যা স্থানীয়ভাবে বা চাকমাদের মধ্যে 'চাঙমাহ্ ভাচ' বা 'চাঙমাহ্ কধা' নামে পরিচিত, দক্ষিণ এশিয়ার ঐতিহাসিকভাবে গুরুত্বপূর্ণ একটি ভাষা, যা তার ভাষাতাত্ত্বিক বৈশিষ্ট্যের জন্য গবেষকদের কাছে অত্যন্ত গুরুত্বপূর্ণ। এই ভাষার ব্যবহারকারীরা মূলত বাংলাদেশের পার্বত্য চট্টগ্রাম অঞ্চলে বসবাস করেন, যা তাদের প্রধান আবাসভূমি। এছাড়াও, ভারতের মিজোরাম, ত্রিপুরা, অরুণাচল প্রদেশ ও আসাম এবং মিয়ানমারের বিভিন্ন প্রদেশে উল্লেখযোগ্য সংখ্যক চাকমা ভাষাভাষী মানুষ রয়েছেন। বিশ্বজুড়ে প্রায় দশ লক্ষ মানুষ এই ভাষায় কথা বলেন।</p>
+                                                <p>আধুনিক চাকমা ভাষা একটি ইন্দো-আর্য ভাষা, এর মূল ভিত্তি ছিল তিব্বতি-বর্মী কোনো ভাষা। গবেষকদের মতে, চাকমা জনগোষ্ঠী সময়ের সাথে সাথে পার্শ্ববর্তী ইন্দো-আর্য ভাষাভাষীদের সংস্পর্শে আসায় একটি পূর্ণাঙ্গ 'ভাষা-বদল' (language shift) প্রক্রিয়ার মধ্য দিয়ে যায়। এই পরিবর্তনের পরেও তাদের আদি তিব্বতি-বর্মী ভাষার কিছু ধ্বনিগত ও শব্দভাণ্ডারগত বৈশিষ্ট্য বা 'অন্তঃস্তরীয় প্রভাব' (substrate influence) ভাষায় থেকে যায়, যা চাকমা ভাষাকে অন্যান্য ইন্দো-আর্য ভাষা থেকে স্বতন্ত্র করে তুলেছে।</p>
+                                            </div>
+                                        </details>
+                                        <details class="bg-slate-50 p-3 rounded-lg">
+                                            <summary class="font-semibold cursor-pointer">চাকমা লিপির বিবর্তন ও বৈশিষ্ট্য</summary>
+                                            <div class="mt-2 space-y-2">
+                                                <p>চাকমা লিপির উৎস নিয়ে দুটিপ্রধান মত প্রচলিত আছে। সর্বাধিক গৃহীত মতানুসারে, এই লিপি বর্মীলিপি থেকে উদ্ভূত হয়েছে, যার মূল উৎস দক্ষিণ-ভারতীয় ব্রাহ্মী লিপি (ব্রাহ্মী > পল্লব > বর্মী > চাকমা)। তবে, সাম্প্রতিক গবেষণা অনুযায়ী, এর বিবর্তন আরও জটিল এবং এর সাথে দক্ষিণ-পূর্ব এশিয়ার প্রাচীন 'কবি' (Kawi) লিপির সংযোগ রয়েছে (ব্রাহ্মী > পল্লব > কবি > চাকমা)। এই গবেষণামতে, চাকমা লিপির অভ্যন্তরীণ গঠন কবি লিপির সাথে বেশি সামঞ্জস্যপূর্ণ।</p>
+                                                <p>চাকমা লিপি একটি 'আবুগিডা' বা শব্দীয় বর্ণমালা, যেখানে প্রতিটি ব্যঞ্জনবর্ণের সাথে একটি অন্তর্নিহিত স্বরধ্বনি যুক্ত থাকে। এর সবচেয়ে অনন্য বৈশিষ্ট্য হলো, এর অন্তর্নিহিত স্বরধ্বনিটি বাংলার মতো 'অ' নয়, বরং 'আ'। অর্থাৎ, কোনো স্বরচিহ্ন ছাড়া একটি বর্ণ, যেমন <span class="chakma-text">𑄇</span>, 'ক' না হয়ে 'কা' উচ্চারিত হয়। এই অন্তর্নিহিত 'আ' ধ্বনিকে লুপ্ত করার জন্য 'মাজ্যে' (<span class="chakma-text">𑄴</span>) নামক একটি বিশেষ চিহ্ন ব্যবহৃত হয়, যা বাংলার হসন্তের (্) মতো কাজ করে।</p>
+                                            </div>
+                                        </details>
+                                        <details class="bg-slate-50 p-3 rounded-lg">
+                                            <summary class="font-semibold cursor-pointer">অঝাপাত কি?</summary>
+                                            <div class="mt-2 space-y-2">
+                                                <p>'অঝাপাত' হলো চাকমা জনগোষ্ঠীর ব্যবহৃত ঐতিহ্যবাহী লিপির নাম। এর উৎস প্রাচীন ব্রাহ্মী লিপি বলে মনে করা হয়। ঐতিহাসিকভাবে, 'অঝাপাত' মূলত চাকমা ওঝা (পুরোহিত) এবং বৈদ্যদের (গ্রাম্য চিকিৎসক) মধ্যে সীমাবদ্ধ ছিল। ধর্মীয় গ্রন্থ ‘আগরতারা’ এবং চিকিৎসা শাস্ত্র ‘বৈদ্যলি পুধি’-এর মতো পাণ্ডুলিপিতে এই লিপি ব্যবহৃত হতো এবং এর মাধ্যমেই এটি প্রজন্ম থেকে প্রজন্মান্তরে সংরক্ষিত হয়েছে। </p>
+                                            </div>
+                                        </details>
+                                    </div>`
+                        },
+                        {
+                            title: "১.২ অঝাপাত (চাকমা বর্ণমালা)",
+                            assignments: [
+                                `<p class="bengali-text"><b>অনুশীলন:</b> <span class="chakma-text">𑄇</span> থেকে <span class="chakma-text">𑄐</span> পর্যন্ত দশটি ব্যঞ্জনবর্ণ খাতায় লিখে নির্দিষ্ট ফেসবুক গ্রুপে পোস্ট কর।</p>`,
+                                `<p class="bengali-text"><b>অনুশীলন:</b> <span class="chakma-text">𑄑</span> থেকে <span class="chakma-text">𑄚</span> পর্যন্ত দশটি ব্যঞ্জনবর্ণ লিখে নির্দিষ্ট ফেসবুক গ্রুপে পোস্ট কর।</p>`,
+                                ``,
+                                `<p class="bengali-text"><b>অনুশীলন:</b> <span class="chakma-text">𑄛</span> থেকে <span class="chakma-text">𑅄</span> পর্যন্ত শেষ তেরোটি ব্যঞ্জনবর্ণ এবং সকল স্বরবর্ণ লিখে নির্দিষ্ট ফেসবুক গ্রুপে পোস্ট কর।</p>`
+                            ],
+                        }
+                    ]
+                }
+            },
+        ];
+
+        function renderModuleContent() {
+            const t = translations[currentLanguage];
+            const moduleData = modules[currentModuleIndex][currentLanguage];
+            const pageData = moduleData.pages[currentPageIndex];
+            
+            let contentHTML = pageData.content;
+            if (currentPageIndex === 1) { // Alphabet page
+                const totalAlphabetPages = Math.ceil(alphabets.length / itemsPerPage);
+                const isLastAlphabetPage = currentAlphabetPage >= totalAlphabetPages - 1;
+                let alphabetHTML = generateAlphabetHTML(currentAlphabetPage);
+                let vowelHTML = isLastAlphabetPage ? generateVowelHTML() : '';
+                contentHTML = alphabetHTML + vowelHTML;
+            }
+
+            let assignmentHTML = '';
+            if (pageData.assignments && pageData.assignments[currentAlphabetPage] && pageData.assignments[currentAlphabetPage].trim() !== '') {
+                assignmentHTML = `
+                    <div class="mt-8 pt-6 border-t-2 border-dashed border-indigo-200">
+                        <details class="bg-amber-50 p-4 rounded-lg">
+                            <summary class="font-bold text-lg text-amber-800 cursor-pointer">${t.assignment}</summary>
+                            <div class="mt-4 text-slate-700 space-y-2">${pageData.assignments[currentAlphabetPage]}</div>
+                        </details>
+                    </div>`;
+            }
+
+            let pageNav = '';
+            let classTitleHTML = '';
+            const totalModulePages = moduleData.pages.length;
+            
+            if (pageData.classTitle) {
+                classTitleHTML = `<span class="class-badge">${pageData.classTitle}</span>`;
+            }
+
+            if (currentPageIndex === 1) {
+                const totalAlphabetPages = Math.ceil(alphabets.length / itemsPerPage);
+                const isFirstAlphabetPage = currentAlphabetPage === 0;
+                const isLastAlphabetPage = currentAlphabetPage >= totalAlphabetPages - 1;
+
+                let prevButton;
+                if (isFirstAlphabetPage) {
+                    prevButton = `<button onclick="changePage(-1)" class="nav-btn-internal text-sm">${t.prevPage}</button>`;
+                } else {
+                    prevButton = `<button onclick="changeAlphabetPage(-1)" class="nav-btn-internal text-sm">${t.prevChars}</button>`;
+                }
+
+                let nextButton;
+                if (isLastAlphabetPage) {
+                    nextButton = `<button class="nav-btn-internal text-sm" disabled>${t.nextPage}</button>`;
+                } else {
+                    nextButton = `<button onclick="changeAlphabetPage(1)" class="nav-btn-internal text-sm">${t.nextChars}</button>`;
+                }
+
+                pageNav = `<div class="flex justify-between items-center mt-8 pt-4 border-t">
+                    ${prevButton}
+                    <span class="text-slate-600 font-semibold text-center text-xs sm:text-base">${t.moduleNavTitle}</span>
+                    ${nextButton}
+                </div>`;
+            } else { 
+                pageNav = `<div class="flex justify-between items-center mt-8 pt-4 border-t">
+                    <button onclick="changePage(-1)" class="nav-btn-internal text-sm" ${currentPageIndex === 0 ? 'disabled' : ''}>${t.prevPage}</button>
+                    <span class="text-slate-600 font-semibold text-center text-xs sm:text-base">${moduleData.title}</span>
+                    <button onclick="changePage(1)" class="nav-btn-internal text-sm" ${currentPageIndex >= totalModulePages - 1 ? 'disabled' : ''}>${t.nextPage}</button>
+                </div>`;
+            }
+            
+            const titleHTML = `
+                <div class="flex justify-between items-center mb-4 flex-wrap gap-2">
+                    <h2 class="text-xl md:text-2xl font-bold text-indigo-600 ${currentLanguage === 'bn' ? 'bengali-text' : ''}">${pageData.title}</h2>
+                    ${classTitleHTML}
+                </div>`;
+
+            contentArea.innerHTML = `${titleHTML}<div>${contentHTML}</div>${assignmentHTML}${pageNav}`;
+        }
+
+        function showModule(index) {
+            currentModuleIndex = index;
+            currentPageIndex = 0;
+            currentAlphabetPage = 0;
+            contentArea.style.opacity = 0;
+            setTimeout(() => { 
+                renderModuleContent(); 
+                contentArea.style.opacity = 1; 
+            }, 300);
+            
+            const navButtons = document.querySelectorAll('#module-nav .nav-btn');
+            navButtons.forEach((btn, i) => { btn.classList.toggle('btn-active', i === index); });
+        }
+        
+        function changePage(direction) {
+            const totalPages = modules[currentModuleIndex][currentLanguage].pages.length;
+            const newIndex = currentPageIndex + direction;
+            if (newIndex >= 0 && newIndex < totalPages) {
+                currentPageIndex = newIndex;
+                currentAlphabetPage = 0; 
+                renderModuleContent();
+            }
+        }
+
+        function changeAlphabetPage(direction) {
+            const totalPages = Math.ceil(alphabets.length / itemsPerPage);
+            const newPage = currentAlphabetPage + direction;
+            if (newPage >= 0 && newPage < totalPages) {
+                currentAlphabetPage = newPage;
+                renderModuleContent();
+            }
+        }
+
+        function openModalForVowel(vowelIndex) {
+            const vowel = vowels[vowelIndex];
+            const t = translations[currentLanguage];
+            const modalTitleEl = document.getElementById('draw-modal-title');
+            modalTitleEl.innerHTML = `<span class="chakma-font text-4xl">${vowel.chakma}</span> <span class="${currentLanguage === 'bn' ? 'bengali-text' : ''}">(${vowel.name[currentLanguage]})</span> ${t.practice}`;
+            modalGuideImage.src = vowel.guideImage;
+            modal.classList.add('show');
+            clearCanvas();
+        }
+
+        function openModalForAlphabet(alphabetIndex) {
+            const alphabet = alphabets[alphabetIndex];
+            const t = translations[currentLanguage];
+            const modalTitleEl = document.getElementById('draw-modal-title');
+            modalTitleEl.innerHTML = `<span class="chakma-font text-4xl">${alphabet.chakma}</span> <span class="${currentLanguage === 'bn' ? 'bengali-text' : ''}">(${alphabet.name}-${alphabet.transliteration[currentLanguage]})</span> ${t.practice}`;
+            modalGuideImage.src = alphabet.guideImage;
+            modal.classList.add('show');
+            clearCanvas();
+        }
+
+        function closeModal() {
+            modal.classList.remove('show');
+        }
+
+        function showIpaDetails(alphabetIndex) {
+            const alphabet = alphabets[alphabetIndex];
+            if (alphabet.ipa_details) {
+                const t = translations[currentLanguage];
+                ipaModalTitle.innerHTML = `<span class="chakma-font text-4xl">${alphabet.chakma}</span> ${t.ipaModalTitle}`;
+                ipaModalContent.innerHTML = alphabet.ipa_details;
+                ipaModalContent.className = `text-justify space-y-3 leading-relaxed ${currentLanguage === 'bn' ? 'bengali-text' : ''}`;
+                ipaModal.classList.add('show');
+            }
+        }
+
+        function closeIpaModal() {
+            ipaModal.classList.remove('show');
+        }
+
+        const noteModal = document.getElementById('note-modal');
+        function openNoteModal() {
+            const t = translations[currentLanguage];
+            const noteContentEl = document.getElementById('note-modal-content');
+            noteContentEl.innerHTML = t.noteContent;
+            noteContentEl.className = `text-justify space-y-3 leading-relaxed ${currentLanguage === 'bn' ? 'bengali-text' : ''}`;
+            noteModal.classList.add('show');
+        }
+        function closeNoteModal() {
+            noteModal.classList.remove('show');
+        }
+
+        function setupCanvas() {
+            ctx.lineWidth = 10;
+            ctx.lineCap = 'round';
+            ctx.strokeStyle = '#1e293b';
+
+            const getPos = (e) => {
+                const rect = canvas.getBoundingClientRect();
+                const scaleX = canvas.width / rect.width;
+                const scaleY = canvas.height / rect.height;
+                let clientX, clientY;
+                if (e.touches) {
+                    clientX = e.touches[0].clientX;
+                    clientY = e.touches[0].clientY;
+                } else {
+                    clientX = e.clientX;
+                    clientY = e.clientY;
+                }
+                return {
+                    x: (clientX - rect.left) * scaleX,
+                    y: (clientY - rect.top) * scaleY
+                };
+            }
+
+            const startDrawing = (e) => {
+                e.preventDefault();
+                isDrawing = true;
+                const { x, y } = getPos(e);
+                ctx.beginPath();
+                ctx.moveTo(x, y);
+            };
+
+            const draw = (e) => {
+                if (!isDrawing) return;
+                e.preventDefault();
+                const { x, y } = getPos(e);
+                ctx.lineTo(x, y);
+                ctx.stroke();
+            };
+
+            const stopDrawing = (e) => {
+                if (!isDrawing) return;
+                e.preventDefault();
+                isDrawing = false;
+                ctx.closePath();
+                saveDrawing();
+            };
+            
+            canvas.onmousedown = startDrawing;
+            canvas.onmousemove = draw;
+            canvas.onmouseup = stopDrawing;
+            canvas.onmouseout = stopDrawing;
+
+            canvas.ontouchstart = startDrawing;
+            canvas.ontouchmove = draw;
+            canvas.ontouchend = stopDrawing;
+        }
+
+        function clearCanvas() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawingHistory = [ctx.getImageData(0, 0, canvas.width, canvas.height)];
+            historyIndex = 0;
+        }
+
+        function saveDrawing() {
+            drawingHistory = drawingHistory.slice(0, historyIndex + 1);
+            drawingHistory.push(ctx.getImageData(0, 0, canvas.width, canvas.height));
+            historyIndex++;
+        }
+
+        function undoLast() {
+            if (historyIndex > 0) {
+                historyIndex--;
+                ctx.putImageData(drawingHistory[historyIndex], 0, 0);
+            }
+        }
+
+        function redoLast() {
+            if (historyIndex < drawingHistory.length - 1) {
+                historyIndex++;
+                ctx.putImageData(drawingHistory[historyIndex], 0, 0);
+            }
+        }
+
+        // Welcome Screen Animation
+        const welcomeScreen = document.getElementById('welcome-screen');
+        const mainApp = document.getElementById('main-app');
+        const welcomeCanvas = document.getElementById('welcome-canvas');
+        const welcomeCtx = welcomeCanvas.getContext('2d');
+        let animationFrameId;
+
+        const allChars = [...alphabets, ...vowels].map(item => item.chakma);
+        let particles = [];
+
+        function resizeWelcomeCanvas() {
+            welcomeCanvas.width = window.innerWidth;
+            welcomeCanvas.height = window.innerHeight;
+        }
+
+        function initWelcomeAnimation() {
+            resizeWelcomeCanvas();
+            particles = [];
+            const numberOfParticles = Math.floor(window.innerWidth / 30);
+            for (let i = 0; i < numberOfParticles; i++) {
+                particles.push({
+                    x: Math.random() * welcomeCanvas.width,
+                    y: Math.random() * welcomeCanvas.height,
+                    char: allChars[Math.floor(Math.random() * allChars.length)],
+                    speed: Math.random() * 2 + 1,
+                    size: Math.random() * 20 + 15,
+                    opacity: Math.random() * 0.5 + 0.2
+                });
+            }
+            if(animationFrameId) cancelAnimationFrame(animationFrameId);
+            animateWelcome();
+        }
+
+        function animateWelcome() {
+            welcomeCtx.clearRect(0, 0, welcomeCanvas.width, welcomeCanvas.height);
+            particles.forEach(p => {
+                welcomeCtx.fillStyle = `rgba(67, 56, 202, ${p.opacity})`;
+                welcomeCtx.font = `${p.size}px 'RibengUni', sans-serif`;
+                welcomeCtx.fillText(p.char, p.x, p.y);
+                p.y += p.speed;
+                if (p.y > welcomeCanvas.height + p.size) {
+                    p.y = -p.size;
+                    p.x = Math.random() * welcomeCanvas.width;
+                }
+            });
+            animationFrameId = requestAnimationFrame(animateWelcome);
+        }
+
+        function startApp() {
+            welcomeScreen.style.opacity = '0';
+            setTimeout(() => {
+                welcomeScreen.style.display = 'none';
+                mainApp.style.display = 'block';
+                document.body.style.overflow = 'auto';
+                setTimeout(() => {
+                    mainApp.style.opacity = '1';
+                }, 50);
+                cancelAnimationFrame(animationFrameId); // Stop animation
+                
+                // Initialize main app
+                setLanguage('en');
+                showModule(0); 
+                setupCanvas();
+                clearCanvas();
+            }, 500);
+        }
+        
+        document.getElementById('lang-toggle-btn').addEventListener('click', toggleLanguage);
+
+        window.addEventListener('click', function(event) {
+            if (event.target === modal) closeModal();
+            if (event.target === ipaModal) closeIpaModal();
+            if (event.target === noteModal) closeNoteModal();
+        });
+
+        window.addEventListener('resize', initWelcomeAnimation);
+        window.onload = initWelcomeAnimation;
+
+    </script>
+
+</body>
+</html>
